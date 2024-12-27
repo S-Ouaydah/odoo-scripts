@@ -11,22 +11,10 @@ GREEN="\e[32m"
 YELLOW="\e[33m"
 BLUE="\e[34m"
 CYAN="\e[36m"
+GREY="\e[38;5;248m"
 BOLD="\e[1m"
 RESET="\e[0m"
 
-# Default values
-ODOO_VERSION=""
-MASTER_PASS=""
-IS_ENTERPRISE="False"
-# Function to print usage information
-usage() {
-  echo "Usage: $0 -v <Odoo_version> -p <Master_Password> [--enterprise]"
-  echo "  -v, --version        Odoo version (e.g., 18.0)"
-  echo "  -p, --password       Master password for Odoo"
-  echo "  --enterprise         If specified, install Odoo Enterprise Edition"
-  echo "  -h, --help           Show this help message"
-  exit 1
-}
 # Check if Zsh is installed
 if ! command -v zsh >/dev/null 2>&1; then
   echo -e "${YELLOW}Zsh is not installed on your system.${RESET}"
@@ -45,47 +33,31 @@ if ! command -v zsh >/dev/null 2>&1; then
   fi
 fi
 
-# Parse command line arguments
-while [[ "$#" -gt 0 ]]; do
-  case "$1" in
-    -v|--version)
-      ODOO_VERSION="$2"
-      shift 2
-      ;;
-    -p|--password)
-      MASTER_PASS="$2"
-      shift 2
-      ;;
-    --enterprise)
-      IS_ENTERPRISE="True"
-      shift
-      ;;
-    -h|--help)
-      usage
-      ;;
-    *)
-      echo "Unknown option: $1"
-      usage
-      ;;
-  esac
-done
-# Function to prompt for missing values
-ask_for_missing_values() {
-  if [ -z "$ODOO_VERSION" ]; then
-    read -p "Odoo version (e.g., 18.0): " ODOO_VERSION
-  fi
-  if [ -z "$MASTER_PASS" ]; then
-    read -sp "Master password: " MASTER_PASS
-    echo  # To move to the next line after the password input
-  fi
+# Get values
+ask_question() {
+  local prompt="$1"
+  local default_value="$2"
+  local var_name="$3"
+  
+  # Display prompt in color
+  echo -n -e "$prompt ${GREY}(${default_value})${RESET} "
+  read $var_name
+  # If input is empty, set to default value
+  eval $var_name=\${$var_name:-$default_value}
+  
+  # Clear the line where the prompt was and display choice
+  tput cuu1
+  tput el
+  local display_value=${!var_name}
+  echo -e "$prompt: ${GREEN}${display_value}${RESET}"  
+  tput el
 }
-# Check if required arguments are provided, else prompt for them
-if [ -z "$ODOO_VERSION" ] || [ -z "$MASTER_PASS" ]; then
-  ask_for_missing_values
-fi
+ask_question "Odoo Version:" "18.0" ODOO_VERSION
+ask_question "Master Password:" "masteradmin" MASTER_PASS
+ask_question "Install Enterprise" "False" IS_ENTERPRISE
+ask_question "Odoo User:" "odoo${ODOO_VERSION%%.*}" ODOO_USER
+ask_question "Odoo Path:" "/opt/$ODOO_USER" ODOO_PATH
 
-ODOO_USER="odoo${ODOO_VERSION%%.*}"  # Convert version '18.0' to 'odoo18'
-ODOO_PATH="/opt/$ODOO_USER"
 echo odoo version: $ODOO_VERSION
 echo odoo user: $ODOO_USER
 echo odoo path: $ODOO_PATH
