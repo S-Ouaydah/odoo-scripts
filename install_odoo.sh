@@ -166,10 +166,12 @@ if [ $IS_ENTERPRISE = "True" ]; then
         echo -e "${YELLOW}In order to clone and install the Odoo enterprise version you \nneed to be an offical Odoo partner and you need access to\nhttp://github.com/odoo/enterprise.${RESET}"
         echo -e "${YELLOW}Continuing installation without enterprise...${RESET}"
         IS_ENTERPRISE="False"
+    else
+      echo -e "${RED}Error: Your authentication with Github has failed!${RESET}"
+      echo "Skipping Odoo Enterprise setup."
     fi
 else
-    echo -e "${RED}Error: Your authentication with Github has failed!${RESET}"
-    echo "Skipping Odoo Enterprise setup."
+    echo -e "${YELLOW}This is only the community setup, skipping enterprise.${RESET}"
 fi
 set -e
 
@@ -194,7 +196,6 @@ db_user = $ODOO_USER
 db_password = False
 http_port = 80${ODOO_VERSION%%.*}
 logfile = $ODOO_PATH/$ODOO_USER.log
-addons_path =$ODOO_PATH/odoo/addons,$ODOO_PATH/custom-addons
 EOL
 EOF
 if [ $IS_ENTERPRISE = "True" ]; then
@@ -237,15 +238,15 @@ echo "\n========================================================================
 echo -e "\n${CYAN}################# Done! The Odoo server is up and running. Specifications: #################${RESET}\n"
 sudo systemctl status $ODOO_USER
 echo "Port: 80${ODOO_VERSION%%.*}"
-echo "User service: $OE_USER"
-echo "User PostgreSQL: $OE_USER"
+echo "User service: /etc/systemd/system/$ODOO_USER.service"
+echo "User PostgreSQL: $ODOO_USER"
 echo "Code location: $ODOO_PATH"
-echo "Addons folder: $ODOO_PATH/custom-addons"
-echo "Password superadmin (database): $MASTER_PASS"
+echo "Custom addons folder: $ODOO_PATH/custom-addons"
+echo "Superadmin Password: $MASTER_PASS"
 echo -e "\n========================================================================="
 
 echo -e "\n${GREEN}################# To Restart Odoo service #################${RESET}\n"
-echo "\nRestart Odoo service: sudo systemctl restart $OE_USER \n"
+echo "\nRestart Odoo service: sudo systemctl restart $ODOO_USER \n"
 echo -e "\n${GREEN}################# To Install Zsh #################${RESET}\n"
 echo "sh -c \"\$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\""
 echo -e "\n${GREEN}################# To Tail Odoo Log File #################${RESET}\n"
