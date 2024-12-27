@@ -18,8 +18,6 @@ RESET="\e[0m"
 ODOO_VERSION=""
 MASTER_PASS=""
 IS_ENTERPRISE="False"
-ODOO_USER="odoo${ODOO_VERSION%%.*}"  # Convert version '18.0' to 'odoo18'
-ODOO_PATH="/opt/$ODOO_USER"
 # Function to print usage information
 usage() {
   echo "Usage: $0 -v <Odoo_version> -p <Master_Password> [--enterprise]"
@@ -86,11 +84,18 @@ if [ -z "$ODOO_VERSION" ] || [ -z "$MASTER_PASS" ]; then
   ask_for_missing_values
 fi
 
+ODOO_USER="odoo${ODOO_VERSION%%.*}"  # Convert version '18.0' to 'odoo18'
+ODOO_PATH="/opt/$ODOO_USER"
+echo odoo version: $ODOO_VERSION
+echo odoo user: $ODOO_USER
+echo odoo path: $ODOO_PATH
+
 echo -e "\n${BOLD}${BLUE}################# Starting Installation of Odoo Version $ODOO_VERSION #################${RESET}\n"
 
 echo -e "\n${CYAN}################# Creating Odoo User #################${RESET}\n"
 sleep 0.5
-sudo useradd -m -U -r -d -s /bin/bash -p "admin" $ODOO_PATH $ODOO_USER
+sudo useradd -m -U -r -d "$ODOO_PATH" -s /bin/bash $ODOO_USER
+echo "$ODOO_USER:$MASTER_PASS" | sudo chpasswd
 sudo usermod -aG sudo $ODOO_USER
 
 #--------------------------------------------------
@@ -118,12 +123,19 @@ sleep 0.5
 #--------------------------------------------------
 echo -e "\n${CYAN}################# Installing wkhtmltopdf #################${RESET}\n"
 sleep 0.5
-cd /tmp
-wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.jammy_amd64.deb
-sudo gdebi -n wkhtmltox_0.12.6.1-3.jammy_amd64.deb
-sudo ln -s /usr/local/bin/wkhtmltopdf /usr/bin/ || true
-sudo ln -s /usr/local/bin/wkhtmltoimage /usr/bin/ || true
-rm wkhtmltox_0.12.6.1-3.jammy_amd64.deb
+
+# Check if wkhtmltopdf is already installed
+if command -v wkhtmltopdf >/dev/null 2>&1; then
+    echo -e "${GREEN}wkhtmltopdf is already installed${RESET}"
+else
+    echo -e "${YELLOW}Installing wkhtmltopdf...${RESET}"
+    cd /tmp
+    wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.jammy_amd64.deb
+    sudo gdebi -n wkhtmltox_0.12.6.1-3.jammy_amd64.deb
+    sudo ln -s /usr/local/bin/wkhtmltopdf /usr/bin/ || true
+    sudo ln -s /usr/local/bin/wkhtmltoimage /usr/bin/ || true
+    rm wkhtmltox_0.12.6.1-3.jammy_amd64.deb
+fi
 #--------------------------------------------------
 # Install PostgresSQL
 #--------------------------------------------------
@@ -145,14 +157,21 @@ sleep 0.5
 cd $ODOO_PATH
 sudo -u ${ODOO_USER} git clone https://www.github.com/odoo/odoo --depth 1 --branch $ODOO_VERSION --single-branch
 
+set +e
 if [ $IS_ENTERPRISE = "True" ]; then
-    GITHUB_RESPONSE=$(sudo -u ${ODOO_USER} git clone https://www.github.com/odoo/enterprise --depth 1 --branch $ODOO_VERSION --single-branch)
+    GITHUB_RESPONSE=$(sudo -u ${ODOO_USER} git clone https://www.github.com/odoo/enterprise --depth 1 --branch $ODOO_VERSION --single-branch 2>&1)
+    echo $GITHUB_RESPONSE
     if [[ $GITHUB_RESPONSE == *"Authentication"* ]]; then
-        echo -e "${RED}Error: Your authentication with Github has failed! Please try again after the script.${RESET}"
+        echo -e "${RED}Error: Your authentication with Github has failed!${RESET}"
         echo -e "${YELLOW}In order to clone and install the Odoo enterprise version you \nneed to be an offical Odoo partner and you need access to\nhttp://github.com/odoo/enterprise.${RESET}"
-        exit 1
+        echo -e "${YELLOW}Continuing installation without enterprise...${RESET}"
+        IS_ENTERPRISE="False"
     fi
+else
+    echo -e "${RED}Error: Your authentication with Github has failed!${RESET}"
+    echo "Skipping Odoo Enterprise setup."
 fi
+set -e
 
   # Running odoo script
 echo -e "\n${CYAN}################# Installing Odoo Dependencies (running odoo's debinstall script) #################${RESET}\n"
@@ -228,6 +247,6 @@ echo -e "\n=====================================================================
 echo -e "\n${GREEN}################# To Restart Odoo service #################${RESET}\n"
 echo "\nRestart Odoo service: sudo systemctl restart $OE_USER \n"
 echo -e "\n${GREEN}################# To Install Zsh #################${RESET}\n"
-echo "sh -c \"$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\""
+echo "sh -c \"\$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\""
 echo -e "\n${GREEN}################# To Tail Odoo Log File #################${RESET}\n"
 echo -e "\n use: tail -f -n 50 $ODOO_PATH/$ODOO_USER.log\n"
