@@ -164,7 +164,7 @@ db_host = False
 db_port = False
 db_user = $ODOO_USER
 db_password = False
-http_port = 80${ODOO_VERSION%%.*}
+http_port = $ODOO_PORT
 logfile = $ODOO_PATH/$ODOO_USER.log
 EOL
 EOF
