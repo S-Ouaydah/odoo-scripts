@@ -52,15 +52,13 @@ ask_question() {
   echo -e "$prompt: ${GREEN}${display_value}${RESET}"  
   tput el
 }
-ask_question "Odoo Version:" "18.0" ODOO_VERSION
+ask_question "Enterprise" "False" IS_ENTERPRISE
 ask_question "Master Password:" "masteradmin" MASTER_PASS
-ask_question "Install Enterprise" "False" IS_ENTERPRISE
+ask_question "Odoo Version:" "18.0" ODOO_VERSION
+ask_question "Odoo Port:" "80${ODOO_VERSION%%.*}" ODOO_PORT
 ask_question "Odoo User:" "odoo${ODOO_VERSION%%.*}" ODOO_USER
 ask_question "Odoo Path:" "/opt/$ODOO_USER" ODOO_PATH
 
-echo odoo version: $ODOO_VERSION
-echo odoo user: $ODOO_USER
-echo odoo path: $ODOO_PATH
 
 echo -e "\n${BOLD}${BLUE}################# Starting Installation of Odoo Version $ODOO_VERSION #################${RESET}\n"
 
@@ -209,7 +207,7 @@ sudo systemctl enable $ODOO_USER
 echo "\n========================================================================="
 echo -e "\n${CYAN}################# Done! The Odoo server is up and running. Specifications: #################${RESET}\n"
 sudo systemctl status $ODOO_USER
-echo "Port: 80${ODOO_VERSION%%.*}"
+echo "Port: $ODOO_PORT"
 echo "User service: /etc/systemd/system/$ODOO_USER.service"
 echo "User PostgreSQL: $ODOO_USER"
 echo "Code location: $ODOO_PATH"
