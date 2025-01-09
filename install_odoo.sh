@@ -87,8 +87,13 @@ sudo apt install -y xfonts-75dpi xfonts-encodings xfonts-utils xfonts-base fontc
 #--------------------------------------------------
 echo -e "\n${CYAN}################# Installing Node.js, npm, and Less #################${RESET}\n"
 sleep 0.5
-sudo apt-get install -y npm nodejs
-sudo ln -s /usr/bin/nodejs /usr/bin/node || true
+# Check if Node.js is already installed
+if command -v node >/dev/null 2>&1; then
+    echo -e "${GREEN}Node.js is already installed${RESET}"
+else
+    sudo apt-get install -y npm nodejs
+    sudo ln -s /usr/bin/nodejs /usr/bin/node || true
+fi
 sudo npm install -g less less-plugin-clean-css rtlcss node-gyp
 sudo apt-get install -y node-less
 sleep 0.5
@@ -167,7 +172,7 @@ sudo -u $ODOO_USER bash <<EOF
 cd $ODOO_PATH
 mkdir -p $ODOO_PATH/custom-addons
 touch $ODOO_PATH/$ODOO_USER.log
-cat > $ODOO_PATH/$ODOO_USER.conf <<EOL
+cat > $ODOO_PATH/$ODOO_USER.conf <<'EOL'
 [options]
 admin_passwd = $MASTER_PASS
 db_host = False
