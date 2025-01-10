@@ -57,11 +57,21 @@ echo -e "\n${BOLD}${BLUE}################# Installation of Odoo Version $ODOO_VE
 
 ask_question "Enterprise" "False" IS_ENTERPRISE
 ask_question "Master Password:" "masteradmin" MASTER_PASS
-# version should be selection... maybe use gum?
 ask_question "Odoo Version:" "18.0" ODOO_VERSION
 ask_question "Odoo Port:" "80${ODOO_VERSION%%.*}" ODOO_PORT
 ask_question "Odoo User:" "odoo${ODOO_VERSION%%.*}" ODOO_USER
 ask_question "Odoo Path:" "/opt/$ODOO_USER" ODOO_PATH
+
+# Check if user already exists
+if id "$ODOO_USER" &>/dev/null; then
+    echo -e "${RED}User $ODOO_USER already exists!${RESET}"
+    exit 1
+fi
+# Check if port is already in use
+if sudo lsof -i :$ODOO_PORT > /dev/null 2>&1; then
+    echo -e "${RED}Port $ODOO_PORT is already in use!${RESET}"
+    exit 1
+fi
 
 echo -e "\n${CYAN}################# Creating Odoo User #################${RESET}\n"
 sleep 0.5
@@ -80,8 +90,7 @@ sleep 0.5
 sudo apt-get update && sudo apt-get upgrade -y
 # python deps stopped for now
 # sudo apt-get install -y python3 python3-cffi python3-dev python3-pip python3-setuptools python3-venv python3-wheel
-sudo apt-get install -y curl wget gdebi libxml2-dev libxslt-dev zlib1g-dev libxrender1 libzip-dev libsasl2-dev libldap2-dev build-essential libssl-dev libffi-dev libmysqlclient-dev libjpeg-dev libpq-dev libjpeg8-dev liblcms2-dev libblas-dev libatlas-base-dev
-sudo apt install -y xfonts-75dpi xfonts-encodings xfonts-utils xfonts-base fontconfig
+sudo apt-get install -y curl wget gdebi libxml2-dev libxslt-dev zlib1g-dev libxrender1 libzip-dev libsasl2-dev libldap2-dev build-essential libssl-dev libffi-dev libmysqlclient-dev libjpeg-dev libpq-dev libjpeg8-dev liblcms2-dev libblas-dev libatlas-base-dev xfonts-75dpi xfonts-encodings xfonts-utils xfonts-base fontconfig
 
 #--------------------------------------------------
 # Install Node Dependencies
@@ -92,11 +101,10 @@ sleep 0.5
 if command -v node >/dev/null 2>&1; then
     echo -e "${GREEN}Node.js is already installed${RESET}"
 else
-    sudo apt-get install -y npm nodejs
+    sudo apt-get install -y npm nodejs node-less
     sudo ln -s /usr/bin/nodejs /usr/bin/node || true
 fi
 sudo npm install -g less less-plugin-clean-css rtlcss node-gyp
-sudo apt-get install -y node-less
 sleep 0.5
 #--------------------------------------------------
 # Install WKHTMLTOPDF
@@ -123,8 +131,13 @@ fi
 #--------------------------------------------------
 echo -e "\n${CYAN}################# Installing PostgreSQL #################${RESET}\n"
 sleep 0.5
-sudo apt-get install -y postgresql postgresql-client
-sudo systemctl start postgresql && sudo systemctl enable postgresql
+# Check if PostgreSQL is already installed
+if command -v psql >/dev/null 2>&1; then
+    echo -e "${GREEN}PostgreSQL is already installed${RESET}"
+else
+    sudo apt-get install -y postgresql postgresql-client
+    sudo systemctl start postgresql && sudo systemctl enable postgresql
+fi
 sudo systemctl status postgresql
 echo -e "${GREY}Creating PostgreSQL User...${RESET}"
 sudo -u postgres createuser -d -R -s $ODOO_USER
