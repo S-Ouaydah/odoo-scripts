@@ -57,6 +57,7 @@ echo -e "\n${BOLD}${BLUE}################# Installation of Odoo Version $ODOO_VE
 
 ask_question "Enterprise" "False" IS_ENTERPRISE
 ask_question "Master Password:" "masteradmin" MASTER_PASS
+# version should be selection... maybe use gum?
 ask_question "Odoo Version:" "18.0" ODOO_VERSION
 ask_question "Odoo Port:" "80${ODOO_VERSION%%.*}" ODOO_PORT
 ask_question "Odoo User:" "odoo${ODOO_VERSION%%.*}" ODOO_USER
@@ -168,11 +169,13 @@ echo -e "\n${CYAN}################# Setting Up The Odoo Directory ##############
 echo -e "${GREY}Setting up Custom Addons Directory...${RESET}"
 echo -e "${GREY}Setting up Log File...${RESET}"
 echo -e "${GREY}Setting up Odoo Configuration File...${RESET}"
-sudo -u $ODOO_USER bash <<EOF
+sudo -u $ODOO_USER bash <<EOL
 cd $ODOO_PATH
 mkdir -p $ODOO_PATH/custom-addons
 touch $ODOO_PATH/$ODOO_USER.log
-cat > $ODOO_PATH/$ODOO_USER.conf <<'EOL'
+touch $ODOO_PATH/$ODOO_USER.conf
+EOL
+sudo cat >> $ODOO_PATH/$ODOO_USER.conf <<EOL
 [options]
 admin_passwd = $MASTER_PASS
 db_host = False
@@ -182,7 +185,6 @@ db_password = False
 http_port = $ODOO_PORT
 logfile = $ODOO_PATH/$ODOO_USER.log
 EOL
-EOF
 if [ $IS_ENTERPRISE = "True" ]; then
     sudo -u ${ODOO_USER} bash -c "printf 'addons_path=${ODOO_PATH}/enterprise,${ODOO_PATH}/odoo/addons,${ODOO_PATH}/custom-addons\n' >> $ODOO_PATH/$ODOO_USER.conf"
 else
