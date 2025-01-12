@@ -5,10 +5,13 @@
 set -e  # Exit immediately on error
 trap "gum log -t timeonly -l warn '⚠️ Exiting script...'; exit 1" SIGINT
 
-# Define color variables
+# Define variables
 GREEN="\e[32m"
 RESET="\e[0m"
 
+VERBOSE="False"
+COPY_SSH="False"
+OM_ACCOUNTING="False"
 # Check if gum is installed
 if ! command -v gum >/dev/null 2>&1; then
   echo -e "${GREEN}Installing Gum...${RESET}"
@@ -30,7 +33,33 @@ if ! command -v zsh >/dev/null 2>&1; then
     gum log -t timeonly -l info "🔄 Please run the script again to continue with Odoo installation." --message.foreground 3
     exit 0
 fi
-
+usage() {
+  echo "Usage: $0 --[verbose]"
+  echo "  --verbose            Show more logs"
+  echo "  --copy-ssh           Copy SSH Configs from another server"
+  echo "  -h, --help           Show this help message"
+  exit 1
+}
+# Parse command line arguments
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    --verbose)
+      VERBOSE="True"
+      shift 2
+      ;;
+    --copy-ssh)
+      COPY_SSH="True"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      echo "Unknown option: $1"
+      usage
+      ;;
+  esac
+done
 # Get values
 ask_question() {
   local prompt="$1"
@@ -54,13 +83,29 @@ print_header() {
 }
 
 print_header "########## Installation of Odoo Version $ODOO_VERSION ##########"
-#Log start time
+
 gum log -t timeonly -l info "🚀 Installation Started\!"
+# copying is easier than a new ssh for now
+if [ $COPY_SSH = "True" ]; then
+  gum log -t timeonly -l info "🔗 Copying SSH Configs..."
+  scp -r root@$(gum input --prompt="Enter the IP of the server you want to copy from: "):/root/.ssh/* /root/.ssh
+  if [ $? -eq 0 ]; then
+    gum log -t timeonly -l info "✅ SSH Configs Copied!"
+  else
+    gum log -t timeonly -l error "❌ Error: It seems SSH Configs not copied!"
+    exit 1
+  fi
+fi
 
 if gum confirm "Do you want to install Enterprise version?" --default=false; then
   IS_ENTERPRISE="True"
 else
-  IS_ENTERPRISE="False" 
+  IS_ENTERPRISE="False"
+  if gum confirm "Do you want to install Odoo Mates Accounting?" --default=false; then
+    OM_ACCOUNTING="True"
+  else
+    OM_ACCOUNTING="False"
+  fi
 fi
 echo "Is Enterprise:$(gum style --foreground 5 --bold "$IS_ENTERPRISE")"
 
@@ -74,13 +119,13 @@ ask_question "Odoo Path" "/opt/$ODOO_USER" "ODOO_PATH"
 
 # Check if user already exists
 if id "$ODOO_USER" &>/dev/null; then
-    gum log -t timeonly -l error "❌ User $ODOO_USER already exists\!"
+    gum log -t timeonly -l error "❌ User $ODOO_USER already exists!"
     exit 1
 fi
 
 # Check if port is already in use
 if sudo lsof -i :$ODOO_PORT > /dev/null 2>&1; then
-    gum log -t timeonly -l error "❌ Port $ODOO_PORT is already in use\!"
+    gum log -t timeonly -l error "❌ Port $ODOO_PORT is already in use!"
     exit 1
 fi
 
@@ -95,7 +140,7 @@ gum log -t timeonly -l info "🔑 User $ODOO_USER added to sudo group with passw
 # Install APT Dependencies
 #--------------------------------------------------
 print_header "########## Updating System and Installing Prerequisites ##########"
-gum spin --spinner dot --show-output --title "Updating system..." -- bash -c "
+gum spin --spinner dot ${VERBOSE:+--show-output} ${VERBOSE:---show-error} --title "Updating system..." -- bash -c "
 gum log -t timeonly -l info '🔄 Running apt-upgrade...'
 sudo DEBIAN_FRONTEND=noninteractive apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
 # python deps stopped for now
@@ -119,7 +164,7 @@ else
     gum log -t timeonly -l info '🔗 Linking nodejs...'
     sudo ln -s /usr/bin/nodejs /usr/bin/node || true
 fi
-gum spin --spinner dot --show-output --title "Installing Node.js..." -- bash -c "
+gum spin --spinner dot ${VERBOSE:+--show-output} ${VERBOSE:---show-error} --title "Installing Node.js..." -- bash -c "
 gum log -t timeonly -l info '📦 Installing npm packages...'
 sudo npm install -g less less-plugin-clean-css rtlcss node-gyp
 "
@@ -166,7 +211,7 @@ cd ~
   # Cloning source
 print_header "########## Cloning Odoo Source Code ##########"
 cd $ODOO_PATH
-gum spin --spinner dot --show-output --title "Cloning Odoo..." -- bash -c "
+gum spin --spinner dot ${VERBOSE:+--show-output} ${VERBOSE:---show-error} --title "Cloning Odoo..." -- bash -c "
 sudo -u ${ODOO_USER} git clone https://www.github.com/odoo/odoo --depth 1 --branch $ODOO_VERSION --single-branch
 "
 gum log -t timeonly -l info "✅ Odoo Community Cloned..." --message.foreground 2
@@ -192,7 +237,7 @@ set -e
   # Running odoo script
 print_header "########## Installing Odoo Dependencies ##########"
 gum log -t timeonly -l info "🔧 Running Odoo's debinstall script..."
-gum spin --spinner dot --show-output --title "Installing dependencies..." -- bash -c "
+gum spin --spinner dot ${VERBOSE:+--show-output} ${VERBOSE:---show-error} --title "Installing dependencies..." -- bash -c "
 sudo $ODOO_PATH/odoo/setup/debinstall.sh
 "
   
@@ -202,6 +247,10 @@ gum log -t timeonly -l info "📁 Setting up Custom Addons Directory..."
 sudo -u $ODOO_USER bash <<EOL
 cd $ODOO_PATH
 mkdir -p $ODOO_PATH/custom-addons
+if [ "$OM_ACCOUNTING" = "True" ]; then
+    cd $ODOO_PATH/custom-addons
+    git clone https://github.com/odoomates/odooapps.git --depth 1 --single-branch --branch $ODOO_VERSION
+fi
 gum log -t timeonly -l info "📝 Setting up Log File..."
 touch $ODOO_PATH/$ODOO_USER.log
 touch $ODOO_PATH/$ODOO_USER.conf
@@ -221,6 +270,9 @@ if [ "$IS_ENTERPRISE" = "True" ]; then
     sudo -u "$ODOO_USER" bash -c "printf 'addons_path=${ODOO_PATH}/enterprise,${ODOO_PATH}/odoo/addons,${ODOO_PATH}/custom-addons' >> ${ODOO_PATH}/${ODOO_USER}.conf"
 else
     sudo -u "$ODOO_USER" bash -c "printf 'addons_path=${ODOO_PATH}/odoo/addons,${ODOO_PATH}/custom-addons' >> ${ODOO_PATH}/${ODOO_USER}.conf"
+fi
+if [ "$OM_ACCOUNTING" = "True" ]; then
+    sudo -u "$ODOO_USER" bash -c "printf ',${ODOO_PATH}/custom-addons/odoomates_accounting' >> ${ODOO_PATH}/${ODOO_USER}.conf"
 fi
 gum log -t timeonly -l info "✅ Odoo Configuration File created at $ODOO_PATH/$ODOO_USER.conf"
 cat $ODOO_PATH/$ODOO_USER.conf
