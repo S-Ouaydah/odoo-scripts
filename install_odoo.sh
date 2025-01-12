@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Odoo Installer for Ubuntu Servers with the ability to handle multiple Odoo Intances
+# wget https://raw.githubusercontent.com/S-Ouaydah/odoo-scripts/refs/heads/fancy_gum/install_odoo.sh && chmod +x install_odoo.sh && ./install_odoo.sh
 set -e  # Exit immediately on error
+trap "gum log -t timeonly -l warn 'Exiting script...'; exit 1" SIGINT
 
 # Define color variables
 RED="\e[31m"
@@ -21,14 +23,17 @@ if ! command -v gum >/dev/null 2>&1; then
   curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
   echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
   sudo DEBIAN_FRONTEND=noninteractive apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y gum
-  echo -e "${GREEN}Gum has been installed successfully.${RESET}"
+  
+  gum log -t timeonly -l info "Gum has been installed successfully." --message.foreground 2
+  
 fi
 # Check if Zsh is installed
 if ! command -v zsh >/dev/null 2>&1; then
     echo -e "${GREEN}Installing Oh-My-Zsh...${RESET}"
     sudo DEBIAN_FRONTEND=noninteractive apt-get install -y zsh
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
-    echo -e "${GREEN}Oh-My-Zsh has been installed. Please run the script again to continue with Odoo installation.${RESET}"
+    gum log -t timeonly -l info "Oh-My-Zsh has been installed successfully." --message.foreground 2
+    gum log -t timeonly -l info "Please run the script again to continue with Odoo installation." --message.foreground 3
     exit 0
 fi
 
@@ -46,7 +51,7 @@ ask_question() {
   fi
   eval $var_name='$result'
   # echo $result
-  echo "$prompt:$(gum style --foreground 5 --bold "$result")"
+  echo "    $prompt:$(gum style --foreground 5 --bold "$result")"
 }
 
 print_header() {
@@ -55,16 +60,18 @@ print_header() {
 }
 
 print_header "########## Installation of Odoo Version $ODOO_VERSION ##########"
+#Log start time
+gum log -t timeonly -l info "Installation Started!"
 
 if gum confirm "Do you want to install Enterprise version?" --default=false; then
   IS_ENTERPRISE="True"
 else
   IS_ENTERPRISE="False" 
 fi
-echo "Is Enterprise:$(gum style --foreground 5 --bold "$IS_ENTERPRISE")"
+echo "    Is Enterprise:$(gum style --foreground 5 --bold "$IS_ENTERPRISE")"
 
 ODOO_VERSION=$(gum choose "18.0" "17.0" "16.0" "15.0" --header="Choose Odoo Version:")
-echo "Odoo Version:$(gum style --foreground 5 --bold "$ODOO_VERSION")"
+echo "    Odoo Version:$(gum style --foreground 5 --bold "$ODOO_VERSION")"
 
 ask_question "Master Password" "masteradmin" "MASTER_PASS"
 ask_question "Odoo Port" "80${ODOO_VERSION%%.*}" "ODOO_PORT"
@@ -73,20 +80,20 @@ ask_question "Odoo Path" "/opt/$ODOO_USER" "ODOO_PATH"
 
 # Check if user already exists
 if id "$ODOO_USER" &>/dev/null; then
-    gum style --foreground 196 "User $ODOO_USER already exists!"
+    gum log -t timeonly -l error "User $ODOO_USER already exists!"
     exit 1
 fi
 
 # Check if port is already in use
 if sudo lsof -i :$ODOO_PORT > /dev/null 2>&1; then
-    gum style --foreground 196 "Port $ODOO_PORT is already in use!"
+    gum log -t timeonly -l error "Port $ODOO_PORT is already in use!"
     exit 1
 fi
 
 print_header "########## Creating Odoo User ##########"
 gum spin --spinner dot --show-output --title "Creating user..." -- bash -c "
 sudo useradd -m -U -r -d \"$ODOO_PATH\" -s /bin/bash $ODOO_USER
-gum log --level info " user $ODOO_USER created at $ODOO_PATH "
+gum log -t timeonly -l info "User $ODOO_USER created at $ODOO_PATH"
 echo "$ODOO_USER:$MASTER_PASS" | sudo chpasswd
 sudo usermod -aG sudo $ODOO_USER
 gum log --level info " user $ODOO_USER added to sudo group with password $MASTER_PASS "
@@ -97,10 +104,12 @@ gum log --level info " user $ODOO_USER added to sudo group with password $MASTER
 #--------------------------------------------------
 print_header "########## Updating System and Installing Prerequisites ##########"
 gum spin --spinner dot --show-output --title "Updating system..." -- bash -c "
+gum log -t timeonly -l info "apt upgrade..."
 sudo DEBIAN_FRONTEND=noninteractive apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
 # python deps stopped for now
 # sudo apt-get install -y python3 python3-cffi python3-dev python3-pip python3-setuptools python3-venv python3-wheel
-  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gdebi libxml2-dev libxslt-dev zlib1g-dev libxrender1 libzip-dev libsasl2-dev libldap2-dev build-essential libssl-dev libffi-dev libmysqlclient-dev libjpeg-dev libpq-dev libjpeg8-dev liblcms2-dev libblas-dev libatlas-base-dev\
+gum log -t timeonly -l info "apt install packages..."
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gdebi libxml2-dev libxslt-dev zlib1g-dev libxrender1 libzip-dev libsasl2-dev libldap2-dev build-essential libssl-dev libffi-dev libmysqlclient-dev libjpeg-dev libpq-dev libjpeg8-dev liblcms2-dev libblas-dev libatlas-base-dev\
       xfonts-75dpi xfonts-encodings xfonts-utils xfonts-base fontconfig\
       npm nodejs node-less\
       postgresql postgresql-client
@@ -113,11 +122,13 @@ print_header "########## Installing Node.js, npm, and Less ##########"
 gum spin --spinner dot --show-output --title "Installing Node.js..." -- bash -c "
 # Check if Node.js is already installed
 if command -v node >/dev/null 2>&1; then
-    gum style --foreground 28 \"Node.js is already installed\"
+    gum log -t timeonly -l info "Node.js is already installed" --message.foreground 2
 else
     # sudo apt-get install -y npm nodejs node-less
+    gum log -t timeonly -l info "Linking nodejs..."
     sudo ln -s /usr/bin/nodejs /usr/bin/node || true
 fi
+gum log -t timeonly -l info "Installing npm packages..."
 sudo npm install -g less less-plugin-clean-css rtlcss node-gyp
 "
 
@@ -128,16 +139,16 @@ print_header "########## Installing wkhtmltopdf ##########"
 gum spin --spinner dot --show-output --title "Installing wkhtmltopdf..." -- bash -c "
 # Check if wkhtmltopdf is already installed
 if command -v wkhtmltopdf >/dev/null 2>&1; then
-    gum style --foreground 28 \"wkhtmltopdf is already installed\"
+    gum log -t timeonly -l info "wkhtmltopdf is already installed" --message.foreground 2
 else
-    gum style --foreground 14 \"Installing wkhtmltopdf...\"
+    gum log -t timeonly -l info "Installing wkhtmltopdf..."
     cd /tmp
     wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.jammy_amd64.deb
     sudo gdebi -n wkhtmltox_0.12.6.1-3.jammy_amd64.deb
-    gum style --foreground 14 \"Creating Links...\"
+    gum log -t timeonly -l info "Creating Links..."
     sudo ln -s /usr/local/bin/wkhtmltopdf /usr/bin/ || true
     sudo ln -s /usr/local/bin/wkhtmltoimage /usr/bin/ || true
-    gum style --foreground 14 \"Cleaning up...\"
+    gum log -t timeonly -l info "Cleaning up..."
     rm wkhtmltox_0.12.6.1-3.jammy_amd64.deb
 fi
 "
@@ -149,13 +160,13 @@ print_header "########## Installing PostgreSQL ##########"
 gum spin --spinner dot --show-output --title "Installing PostgreSQL..." -- bash -c "
 # Check if PostgreSQL is already installed
 if command -v psql >/dev/null 2>&1; then
-    gum style --foreground 28 \"PostgreSQL is already installed\"
+    gum log -t timeonly -l info \"PostgreSQL is already installed\" --message.foreground 2
 else
     # sudo apt-get install -y postgresql postgresql-client
     sudo systemctl start postgresql && sudo systemctl enable postgresql
 fi
 sudo systemctl status postgresql
-gum style --foreground 14 \"Creating PostgreSQL User...\"
+gum log -t timeonly -l info \"Creating PostgreSQL User...\"
 sudo -u postgres createuser -d -R -s $ODOO_USER
 "
 
@@ -166,10 +177,10 @@ sudo -u postgres createuser -d -R -s $ODOO_USER
 #--------------------------------------------------
   # Cloning source
 print_header "########## Cloning Odoo Source Code ##########"
-gum spin --spinner --show-output dot --title "Cloning Odoo..." -- bash -c "
+gum spin --spinner dot --show-output --title "Cloning Odoo..." -- bash -c "
 cd $ODOO_PATH
 sudo -u ${ODOO_USER} git clone https://www.github.com/odoo/odoo --depth 1 --branch $ODOO_VERSION --single-branch
-gum style --foreground 14 \"Odoo Community Cloned...\"
+gum log -t timeonly -l info \"Odoo Community Cloned...\"
 "
 
 set +e
@@ -177,31 +188,31 @@ if [ $IS_ENTERPRISE = "True" ]; then
     GITHUB_RESPONSE=$(sudo -u ${ODOO_USER} git clone https://www.github.com/odoo/enterprise --depth 1 --branch $ODOO_VERSION --single-branch 2>&1)
     echo $GITHUB_RESPONSE
     if [[ $GITHUB_RESPONSE == *"Authentication"* ]]; then
-        gum style --foreground 196 "Error: Your authentication with Github has failed!"
-        gum style --foreground 220 "In order to clone and install the Odoo enterprise version you \nneed to be an offical Odoo partner and you need access to\nhttp://github.com/odoo/enterprise."
-        gum style --foreground 220 "Continuing installation without enterprise..."
+        gum log -t timeonly -l error "Error: Your authentication with Github has failed!" --message.foreground 1
+        gum log -t timeonly -l info "In order to clone and install the Odoo enterprise version you \nneed to be an offical Odoo partner and you need access to\nhttp://github.com/odoo/enterprise." --message.foreground 3
+        gum log -t timeonly -l info "Continuing installation without enterprise..."
         IS_ENTERPRISE="False"
     else
-      gum style --foreground 196 "Error: Your authentication with Github has failed!"
-      gum style "Continuing installation without enterprise..."
+      gum log -t timeonly -l error "Error: Your authentication with Github has failed!" --message.foreground 1
+      gum log -t timeonly -l info "Continuing installation without enterprise..."
     fi
 else
-    gum style --foreground 220 "This is only the community setup, skipping enterprise."
+    gum log -t timeonly -l info "This is only the community setup, skipping enterprise."
 fi
 set -e
 
   # Running odoo script
 print_header "########## Installing Odoo Dependencies ##########"
-gum style --foreground 14 "Running Odoo's debinstall script..."
+gum log -t timeonly -l info "Running Odoo's debinstall script..."
 gum spin --spinner dot --show-output --title "Installing dependencies..." -- bash -c "
 sudo $ODOO_PATH/odoo/setup/debinstall.sh
 "
   
   # Creating Odoo dirs and files
 print_header "########## Setting Up The Odoo Directory ##########"
-gum style --foreground 14 "Setting up Custom Addons Directory..."
-gum style --foreground 14 "Setting up Log File..."
-gum style --foreground 14 "Setting up Odoo Configuration File..."
+gum log -t timeonly -l info "Setting up Custom Addons Directory..."
+gum log -t timeonly -l info "Setting up Log File..."
+gum log -t timeonly -l info "Setting up Odoo Configuration File..."
 gum spin --spinner dot --show-output --title "Setting up directories..." -- bash -c "
 sudo -u $ODOO_USER bash <<EOL
 cd $ODOO_PATH
@@ -247,36 +258,35 @@ WantedBy=multi-user.target
 EOL
 "
 
-gum style --foreground 14 "Created systemd service file at /etc/systemd/system/$ODOO_USER.service:"
+gum log -t timeonly -l info "Created systemd service file at /etc/systemd/system/$ODOO_USER.service"
 cat /etc/systemd/system/$ODOO_USER.service
 
   # Starting and Enabling Odoo Service
 print_header "########## Starting and Enabling Odoo Service ##########"
+gum log -t timeonly -l info "Starting and enabling Odoo service..."
 gum spin --spinner dot --show-output --title "Starting service..." -- bash -c "
 sudo systemctl daemon-reload
-gum style --foreground 14 \"Starting Odoo Service...\"
+gum log -t timeonly -l info \"Starting Odoo Service...\"
 sudo systemctl start $ODOO_USER
-gum style --foreground 14 \"Enabling Odoo Service...\"
+gum log -t timeonly -l info \"Enabling Odoo Service...\"
 sudo systemctl enable $ODOO_USER
 "
 
 #--------------------------------------------------
 # Dumping Info
 #--------------------------------------------------
-gum style --foreground 51 "========================================================================="
-sudo systemctl status $ODOO_USER
-gum style --foreground 51 "========================================================================="
+gum style --foreground 51 --border-foreground 51 --border double --align center --width 90 --margin "1 2" --padding "2 4" "
+=========================================================================
+########## Installation Complete!! ##########
 
-print_header "########## Done! The Odoo server is running on port $ODOO_PORT ##########"
+Link: http://$(hostname -I | awk '{print $1}'):$ODOO_PORT
+User (Linux & PostgreSQL): $ODOO_USER
+Service Location: /etc/systemd/system/$ODOO_USER.service
+Odoo location: $ODOO_PATH
+Custom addons folder: $ODOO_PATH/custom-addons
+Superadmin Password: $MASTER_PASS
 
-gum style --foreground 14 "Link: http://$(hostname -I | awk '{print $1}'):$ODOO_PORT"
-gum style --foreground 14 "User (Linux & PostgreSQL): $ODOO_USER"
-gum style --foreground 14 "Service Location: /etc/systemd/system/$ODOO_USER.service"
-gum style --foreground 14 "Odoo location: $ODOO_PATH"
-gum style --foreground 14 "Custom addons folder: $ODOO_PATH/custom-addons"
-gum style --foreground 14 "Superadmin Password: $MASTER_PASS"
-
-gum style --foreground 51 "========================================================================="
+========================================================================="
 
 print_header "########## To Restart Odoo service ##########"
 gum style --foreground 14 "Restart Odoo service: sudo systemctl restart $ODOO_USER"
@@ -286,3 +296,5 @@ gum style --foreground 14 "sh -c \"\$(curl -fsSL https://raw.github.com/ohmyzsh/
 
 print_header "########## To Tail Odoo Log File ##########"
 gum style --foreground 14 "use: tail -f -n 50 $ODOO_PATH/$ODOO_USER.log"
+
+gum log -t timeonly -l info "Installation Completed!"
