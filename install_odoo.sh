@@ -45,11 +45,11 @@ while [[ "$#" -gt 0 ]]; do
   case "$1" in
     --verbose)
       VERBOSE="True"
-      shift 2
+      shift
       ;;
     --copy-ssh)
       COPY_SSH="True"
-      shift 2
+      shift
       ;;
     -h|--help)
       usage
@@ -140,7 +140,7 @@ gum log -t timeonly -l info "🔑 User $ODOO_USER added to sudo group with passw
 # Install APT Dependencies
 #--------------------------------------------------
 print_header "########## Updating System and Installing Prerequisites ##########"
-gum spin --spinner dot ${VERBOSE:+--show-output} ${VERBOSE:---show-error} --title "Updating system..." -- bash -c "
+gum spin --spinner dot --title "Updating system..." "$([[ "$VERBOSE" == "true" ]] && echo --show-output || echo --show-error)" -- bash -c "
 gum log -t timeonly -l info '🔄 Running apt-upgrade...'
 sudo DEBIAN_FRONTEND=noninteractive apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
 # python deps stopped for now
@@ -164,7 +164,7 @@ else
     gum log -t timeonly -l info '🔗 Linking nodejs...'
     sudo ln -s /usr/bin/nodejs /usr/bin/node || true
 fi
-gum spin --spinner dot ${VERBOSE:+--show-output} ${VERBOSE:---show-error} --title "Installing Node.js..." -- bash -c "
+gum spin --spinner dot --title "Installing Node.js..." "$([[ "$VERBOSE" == "true" ]] && echo --show-output || echo --show-error)" -- bash -c "
 gum log -t timeonly -l info '📦 Installing npm packages...'
 sudo npm install -g less less-plugin-clean-css rtlcss node-gyp
 "
@@ -211,7 +211,7 @@ cd ~
   # Cloning source
 print_header "########## Cloning Odoo Source Code ##########"
 cd $ODOO_PATH
-gum spin --spinner dot ${VERBOSE:+--show-output} ${VERBOSE:---show-error} --title "Cloning Odoo..." -- bash -c "
+gum spin --spinner dot --title "Cloning Odoo..." "$([[ "$VERBOSE" == "true" ]] && echo --show-output || echo --show-error)" -- bash -c "
 sudo -u ${ODOO_USER} git clone https://www.github.com/odoo/odoo --depth 1 --branch $ODOO_VERSION --single-branch
 "
 gum log -t timeonly -l info "✅ Odoo Community Cloned..." --message.foreground 2
@@ -237,7 +237,7 @@ set -e
   # Running odoo script
 print_header "########## Installing Odoo Dependencies ##########"
 gum log -t timeonly -l info "🔧 Running Odoo's debinstall script..."
-gum spin --spinner dot ${VERBOSE:+--show-output} ${VERBOSE:---show-error} --title "Installing dependencies..." -- bash -c "
+gum spin --spinner dot --title "Installing dependencies..." "$([[ "$VERBOSE" == "true" ]] && echo --show-output || echo --show-error)" -- bash -c "
 sudo $ODOO_PATH/odoo/setup/debinstall.sh
 "
   
