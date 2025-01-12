@@ -6,33 +6,10 @@ set -e  # Exit immediately on error
 trap "gum log -t timeonly -l warn '⚠️ Exiting script...'; exit 1" SIGINT
 
 # Define variables
-GREEN="\e[32m"
-RESET="\e[0m"
-
 VERBOSE="False"
 COPY_SSH="False"
 OM_ACCOUNTING="False"
-# Check if gum is installed
-if ! command -v gum >/dev/null 2>&1; then
-  echo -e "${GREEN}Installing Gum...${RESET}"
-  # Add Charm repository
-  sudo mkdir -p /etc/apt/keyrings
-  curl -fsSL https://repo.charm.sh/apt/gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
-  echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
-  sudo DEBIAN_FRONTEND=noninteractive apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y gum
-  
-  gum log -t timeonly -l info "✅ Gum has been installed successfully." --message.foreground 2
-  
-fi
-# Check if Zsh is installed
-if ! command -v zsh >/dev/null 2>&1; then
-    echo -e "${GREEN}Installing Oh-My-Zsh...${RESET}"
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y zsh
-    sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
-    gum log -t timeonly -l info "✅ Oh-My-Zsh has been installed successfully." --message.foreground 2
-    gum log -t timeonly -l info "🔄 Please run the script again to continue with Odoo installation." --message.foreground 3
-    exit 0
-fi
+
 usage() {
   echo "Usage: $0 --[verbose]"
   echo "  --verbose            Show more logs"
@@ -90,9 +67,9 @@ if [ $COPY_SSH = "True" ]; then
   gum log -t timeonly -l info "🔗 Copying SSH Configs..."
   scp -r root@$(gum input --prompt="Enter the IP of the server you want to copy from: "):/root/.ssh/* /root/.ssh
   if [ $? -eq 0 ]; then
-    gum log -t timeonly -l info "✅ SSH Configs Copied!"
+    gum log -t timeonly -l info "✅ SSH Configs Copied\!"
   else
-    gum log -t timeonly -l error "❌ Error: It seems SSH Configs not copied!"
+    gum log -t timeonly -l error "❌ Error: It seems SSH Configs not copied\!"
     exit 1
   fi
 fi
@@ -119,18 +96,18 @@ ask_question "Odoo Path" "/opt/$ODOO_USER" "ODOO_PATH"
 
 # Check if user already exists
 if id "$ODOO_USER" &>/dev/null; then
-    gum log -t timeonly -l error "❌ User $ODOO_USER already exists!"
+    gum log -t timeonly -l error "❌ User $ODOO_USER already exists\!"
     exit 1
 fi
 
 # Check if port is already in use
 if sudo lsof -i :$ODOO_PORT > /dev/null 2>&1; then
-    gum log -t timeonly -l error "❌ Port $ODOO_PORT is already in use!"
+    gum log -t timeonly -l error "❌ Port $ODOO_PORT is already in use\!"
     exit 1
 fi
 
 print_header "########## Creating Odoo User ##########"
-sudo useradd -m -U -r -d "$ODOO_PATH" -s /bin/bash "$ODOO_USER"
+sudo useradd -m -U -r -d "$ODOO_PATH" -s /bin/zsh "$ODOO_USER"
 gum log -t timeonly -l info "👤 User $ODOO_USER created at $ODOO_PATH"
 echo "$ODOO_USER:$MASTER_PASS" | sudo chpasswd
 sudo usermod -aG sudo "$ODOO_USER"
@@ -315,7 +292,7 @@ sudo systemctl enable $ODOO_USER
 #--------------------------------------------------
 # Dumping Info
 #--------------------------------------------------
-gum style --foreground 3 --border-foreground 4 --border double --align left --width 90 --margin "1 2" --padding "2 4" "$(gum format -- "
+INST_DETAILS= "
 =========================================================================
 ########## Installation Complete! ##########
 
@@ -329,9 +306,10 @@ gum style --foreground 3 --border-foreground 4 --border double --align left --wi
 * Superadmin Password: $MASTER_PASS
 
 =========================================================================
-")"
+"
+gum style --foreground 3 --border-foreground 4 --border double --align left --width 90 --margin "1 2" --padding "2 4" "$(gum format -- "$INST_DETAILS")"
 
-gum style --foreground 4 --border-foreground 3 --border double --align left --width 100 --margin "1 2" --padding "2 4" "$(gum format -- "
+TIPS= "
 ########## Tips and Useful Commands ##########
 
 Restart Odoo service
@@ -342,6 +320,11 @@ Don't Forget to Install OhMyZsh on Odoo user ;)
 
 To Tail Odoo Log File
 ### tail -f -n 50 $ODOO_PATH/$ODOO_USER.log
-")"
+"
+gum style --foreground 4 --border-foreground 3 --border double --align left --width 100 --margin "1 2" --padding "2 4" "$(gum format -- "$TIPS")"
+
+# save the info
+echo "$INST_DETAILS" >> /opt/server_info.txt
+echo "$TIPS" >> /opt/server_tips.txt
 
 gum log -t timeonly -l info "🎉 Installation Completed\!" --message.foreground 3
