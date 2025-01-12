@@ -55,32 +55,32 @@ print_header() {
 
 print_header "########## Installation of Odoo Version $ODOO_VERSION ##########"
 #Log start time
-gum log -t timeonly -l info "Installation Started!"
+gum log -t timeonly -l info "Installation Started\!"
 
 if gum confirm "Do you want to install Enterprise version?" --default=false; then
   IS_ENTERPRISE="True"
 else
   IS_ENTERPRISE="False" 
 fi
-echo "    Is Enterprise:$(gum style --foreground 5 --bold "$IS_ENTERPRISE")"
+echo "Is Enterprise:$(gum style --foreground 5 --bold "$IS_ENTERPRISE")"
 
 ODOO_VERSION=$(gum choose "18.0" "17.0" "16.0" "15.0" --header="Choose Odoo Version:")
-echo "    Odoo Version:$(gum style --foreground 5 --bold "$ODOO_VERSION")"
+echo "Odoo Version:$(gum style --foreground 5 --bold "$ODOO_VERSION")"
 
-ask_question "    Master Password" "masteradmin" "MASTER_PASS"
-ask_question "    Odoo Port" "80${ODOO_VERSION%%.*}" "ODOO_PORT"
-ask_question "    Odoo User" "odoo${ODOO_VERSION%%.*}" "ODOO_USER"
-ask_question "    Odoo Path" "/opt/$ODOO_USER" "ODOO_PATH"
+ask_question "Master Password" "masteradmin" "MASTER_PASS"
+ask_question "Odoo Port" "80${ODOO_VERSION%%.*}" "ODOO_PORT"
+ask_question "Odoo User" "odoo${ODOO_VERSION%%.*}" "ODOO_USER"
+ask_question "Odoo Path" "/opt/$ODOO_USER" "ODOO_PATH"
 
 # Check if user already exists
 if id "$ODOO_USER" &>/dev/null; then
-    gum log -t timeonly -l error "User $ODOO_USER already exists!"
+    gum log -t timeonly -l error "User $ODOO_USER already exists\!"
     exit 1
 fi
 
 # Check if port is already in use
 if sudo lsof -i :$ODOO_PORT > /dev/null 2>&1; then
-    gum log -t timeonly -l error "Port $ODOO_PORT is already in use!"
+    gum log -t timeonly -l error "Port $ODOO_PORT is already in use\!"
     exit 1
 fi
 
@@ -176,12 +176,12 @@ if [ $IS_ENTERPRISE = "True" ]; then
     GITHUB_RESPONSE=$(sudo -u ${ODOO_USER} git clone https://www.github.com/odoo/enterprise --depth 1 --branch $ODOO_VERSION --single-branch 2>&1)
     echo $GITHUB_RESPONSE
     if [[ $GITHUB_RESPONSE == *"Authentication"* ]]; then
-        gum log -t timeonly -l error "Error: Your authentication with Github has failed!" --message.foreground 1
+        gum log -t timeonly -l error "Error: Your authentication with Github has failed\!" --message.foreground 1
         gum log -t timeonly -l info "In order to clone and install the Odoo enterprise version you \nneed to be an offical Odoo partner and you need access to\nhttp://github.com/odoo/enterprise." --message.foreground 3
         gum log -t timeonly -l info "Continuing installation without enterprise..."
         IS_ENTERPRISE="False"
     else
-      gum log -t timeonly -l error "Error: Your authentication with Github has failed!" --message.foreground 1
+      gum log -t timeonly -l error "Error: Your authentication with Github has failed\!" --message.foreground 1
       gum log -t timeonly -l info "Continuing installation without enterprise..."
     fi
 else
@@ -290,4 +290,4 @@ To Tail Odoo Log File
 ### tail -f -n 50 $ODOO_PATH/$ODOO_USER.log
 ")"
 
-gum log -t timeonly -l info "Installation Completed!"
+gum log -t timeonly -l info "Installation Completed\!" --message.foreground 3
