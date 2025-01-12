@@ -185,7 +185,7 @@ if [ $IS_ENTERPRISE = "True" ]; then
       gum log -t timeonly -l info "Continuing installation without enterprise..."
     fi
 else
-    gum log -t timeonly -l info "This is only the community setup, skipping enterprise."
+    gum log -t timeonly -l info "This is only the community setup, skipping enterprise." --message.foreground 3
 fi
 set -e
 
@@ -217,10 +217,10 @@ db_password = False
 http_port = $ODOO_PORT
 logfile = $ODOO_PATH/$ODOO_USER.log
 EOL
-if [ $IS_ENTERPRISE = 'True' ]; then
-    sudo -u ${ODOO_USER} bash -c \"printf 'addons_path=${ODOO_PATH}/enterprise,${ODOO_PATH}/odoo/addons,${ODOO_PATH}/custom-addons' >> $ODOO_PATH/$ODOO_USER.conf\"
+if [ "$IS_ENTERPRISE" = "True" ]; then
+    sudo -u "$ODOO_USER" bash -c "printf 'addons_path=${ODOO_PATH}/enterprise,${ODOO_PATH}/odoo/addons,${ODOO_PATH}/custom-addons' >> ${ODOO_PATH}/${ODOO_USER}.conf"
 else
-    sudo -u ${ODOO_USER} bash -c \"printf 'addons_path=${ODOO_PATH}/odoo/addons,${ODOO_PATH}/custom-addons' >> ${ODOO_PATH}/${ODOO_USER}.conf\"
+    sudo -u "$ODOO_USER" bash -c "printf 'addons_path=${ODOO_PATH}/odoo/addons,${ODOO_PATH}/custom-addons' >> ${ODOO_PATH}/${ODOO_USER}.conf"
 fi
 
 # Creating Odoo Systemd Service
