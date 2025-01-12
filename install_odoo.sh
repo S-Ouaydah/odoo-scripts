@@ -249,7 +249,7 @@ cd $ODOO_PATH
 mkdir -p $ODOO_PATH/custom-addons
 if [ "$OM_ACCOUNTING" = "True" ]; then
     cd $ODOO_PATH/custom-addons
-    git clone https://github.com/odoomates/odooapps.git --depth 1 --single-branch --branch $ODOO_VERSION
+    git clone https://github.com/odoomates/odooapps.git --depth 1 --single-branch --branch $ODOO_VERSION $ODOO_PATH/custom-addons/odoomates_accounting
 fi
 gum log -t timeonly -l info "📝 Setting up Log File..."
 touch $ODOO_PATH/$ODOO_USER.log
