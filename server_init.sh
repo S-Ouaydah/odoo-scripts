@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # Entry point to install slomax's odoo-scripts
-# wget -O- https://raw.githubusercontent.com/S-Ouaydah/odoo-scripts/refs/heads/expansion/server_init.sh | bash
-# sh -c "$(curl -fsSL https://raw.githubusercontent.com/S-Ouaydah/odoo-scripts/refs/heads/expansion/server_init.sh)" || true
+# sh -c "$(curl -fsSL https://raw.githubusercontent.com/S-Ouaydah/odoo-scripts/refs/heads/expansion/server_init.sh)"
 GREEN="\e[32m"
 RESET="\e[0m"
 
@@ -28,9 +27,11 @@ if ! command -v zsh >/dev/null 2>&1; then
     echo -e "${GREEN}Installing Oh-My-Zsh...${RESET}"
     sudo apt-get install -y zsh
     gum log -t timeonly -l info "🚀 Use install-odoo to start with the Odoo installation." --message.foreground 3
+    export RUNZSH=no
+    export CHSH=no 
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
     gum log -t timeonly -l info "✅ Oh-My-Zsh has been installed successfully." --message.foreground 2
-    echo "path+=($REPO_LOC)" >> $ZENV
+    # echo "path+=($REPO_LOC)" >> $ZENV
     # Set aliases
     echo "alias install-odoo='$REPO_LOC/install_odoo.sh'" >> $ZENV
     echo "alias server-info='$REPO_LOC/get_server_details.sh'" >> $ZENV
