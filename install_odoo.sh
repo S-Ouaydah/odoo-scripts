@@ -28,6 +28,8 @@ fi
 if ! command -v zsh >/dev/null 2>&1; then
     echo -e "${GREEN}Installing Oh-My-Zsh...${RESET}"
     sudo DEBIAN_FRONTEND=noninteractive apt-get install -y zsh
+    export RUNZSH=no
+    export CHSH=no 
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
     gum log -t timeonly -l info "✅ Oh-My-Zsh has been installed successfully." --message.foreground 2
     gum log -t timeonly -l info "🔄 Please run the script again to continue with Odoo installation." --message.foreground 3
