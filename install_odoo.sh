@@ -312,7 +312,7 @@ sudo systemctl enable $ODOO_USER
 #--------------------------------------------------
 # Dumping Info
 #--------------------------------------------------
-INST_DETAILS= "
+INST_DETAILS="
 =========================================================================
 ########## Installation Complete! ##########
 
@@ -327,24 +327,29 @@ INST_DETAILS= "
 
 =========================================================================
 "
+
 gum style --foreground 3 --border-foreground 4 --border double --align left --width 90 --margin "1 2" --padding "2 4" "$(gum format -- "$INST_DETAILS")"
 
-TIPS= "
+TIPS="
+=========================================================================
 ########## Tips and Useful Commands ##########
 
 Restart Odoo service
 ### sudo systemctl restart $ODOO_USER.service
 
 Don't Forget to Install OhMyZsh on Odoo user ;)
-### sh -c '\$(curl -fsSL [https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh]())'
+### sh -c '\$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)'
 
 To Tail Odoo Log File
 ### tail -f -n 50 $ODOO_PATH/$ODOO_USER.log
-"
+========================================================================="
+
 gum style --foreground 4 --border-foreground 3 --border double --align left --width 100 --margin "1 2" --padding "2 4" "$(gum format -- "$TIPS")"
 
 # save the info
+touch /opt/server_info.txt
+touch /opt/server_tips.txt
 echo "$INST_DETAILS" >> /opt/server_info.txt
 echo "$TIPS" >> /opt/server_tips.txt
 
-gum log -t timeonly -l info "🎉 Installation Completed\!" --message.foreground 3
+gum log -t timeonly -l info "🎉 Installation Completed 🎉" --message.foreground 3

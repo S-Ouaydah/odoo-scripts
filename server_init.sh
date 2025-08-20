@@ -32,6 +32,7 @@ if ! command -v zsh >/dev/null 2>&1; then
     sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" || true
     gum log -t timeonly -l info "✅ Oh-My-Zsh has been installed successfully." --message.foreground 2
     # echo "path+=($REPO_LOC)" >> $ZENV
+    echo "export TERM=xterm-256color" >> $ZENV
     # Set aliases
     echo "alias install-odoo='$REPO_LOC/install_odoo.sh'" >> $ZENV
     echo "alias server-info='$REPO_LOC/get_server_details.sh'" >> $ZENV
