@@ -16,7 +16,7 @@ if ! command -v gum >/dev/null 2>&1; then
   echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" | sudo tee /etc/apt/sources.list.d/charm.list
   sudo DEBIAN_FRONTEND=noninteractive apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y gum
   gum log -t timeonly -l info "✅ Gum has been installed successfully." --message.foreground 2
-  
+
 fi
 
 git clone https://github.com/S-Ouaydah/odoo-scripts --branch expansion $REPO_LOC
@@ -36,7 +36,9 @@ if ! command -v zsh >/dev/null 2>&1; then
     echo "alias install-odoo='$REPO_LOC/install_odoo.sh'" >> $ZENV
     echo "alias server-info='$REPO_LOC/get_server_details.sh'" >> $ZENV
     echo "alias update-odoo-scripts='cd $REPO_LOC && git pull'" >> $ZENV
-    echo "alias odoo-restart='systemctl restart'" >> $ZENV
+    echo "alias odoo-restart='$REPO_LOC/odoo-restart.sh'" >> $ZENV
+    echo "alias list-odoo='$REPO_LOC/list-odoo.sh'" >> $ZENV
+    echo "alias odoo-upgrade='$REPO_LOC/odoo-upgrade.sh'" >> $ZENV
 
 fi
 

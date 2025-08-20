@@ -9,6 +9,7 @@ trap "gum log -t timeonly -l warn '⚠️ Exiting script...'; exit 1" SIGINT
 VERBOSE="False"
 COPY_SSH="False"
 OM_ACCOUNTING="False"
+CYBRO_ACCOUNTING="False"
 
 usage() {
   echo "Usage: $0 --[verbose]"
@@ -73,7 +74,6 @@ if [ $COPY_SSH = "True" ]; then
     exit 1
   fi
 fi
-
 if gum confirm "Do you want to install Enterprise version?" --default=false; then
   IS_ENTERPRISE="True"
 else
@@ -83,7 +83,13 @@ else
   else
     OM_ACCOUNTING="False"
   fi
+  if gum confirm "Do you want to install Cybro Accounting?" --default=false; then
+    CYBRO_ACCOUNTING="True"
+  else
+    CYBRO_ACCOUNTING="False"
+  fi
 fi
+
 echo "Is Enterprise:$(gum style --foreground 5 --bold "$IS_ENTERPRISE")"
 
 ODOO_VERSION=$(gum choose "18.0" "17.0" "16.0" "15.0" --header="Choose Odoo Version:")
@@ -121,10 +127,12 @@ gum spin --spinner dot --title "Updating system..." "$([[ "$VERBOSE" == "true" ]
 gum log -t timeonly -l info '🔄 Running apt-upgrade...'
 sudo DEBIAN_FRONTEND=noninteractive apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
 # python deps stopped for now
-# sudo apt-get install -y python3 python3-cffi python3-dev python3-pip python3-setuptools python3-venv python3-wheel
+sudo apt-get install -y 
 gum log -t timeonly -l info '📦 apt install packages...'
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget gdebi libxml2-dev libxslt-dev zlib1g-dev libxrender1 libzip-dev libsasl2-dev libldap2-dev build-essential libssl-dev libffi-dev libmysqlclient-dev libjpeg-dev libpq-dev libjpeg8-dev liblcms2-dev libblas-dev libatlas-base-dev\
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3  python3-pip python3-setuptools python3-venv python3-wheel\
+      curl wget gdebi libxml2-dev libxslt-dev zlib1g-dev libxrender1 libzip-dev libsasl2-dev libldap2-dev build-essential libssl-dev libffi-dev libmysqlclient-dev libjpeg-dev libpq-dev libjpeg8-dev liblcms2-dev libblas-dev libatlas-base-dev\
       xfonts-75dpi xfonts-encodings xfonts-utils xfonts-base fontconfig\
+      fonts-dejavu-core fonts-noto-core fonts-inconsolata fonts-font-awesome fonts-roboto-unhinted\
       npm nodejs node-less\
       postgresql postgresql-client
   "
@@ -192,6 +200,11 @@ gum spin --spinner dot --title "Cloning Odoo..." "$([[ "$VERBOSE" == "true" ]] &
 sudo -u ${ODOO_USER} git clone https://www.github.com/odoo/odoo --depth 1 --branch $ODOO_VERSION --single-branch
 "
 gum log -t timeonly -l info "✅ Odoo Community Cloned..." --message.foreground 2
+print_header "########## Creating Virtual Environment ##########"
+gum log -t timeonly -l info "🔧 Creating virtual environment..."
+sudo -u $ODOO_USER python3 -m venv $ODOO_PATH/venv
+gum log -t timeonly -l info "📦 Installing Python dependencies..."
+sudo -u $ODOO_USER $ODOO_PATH/venv/bin/pip install -r $ODOO_PATH/odoo/requirements.txt
 set +e
 
 if [ $IS_ENTERPRISE = "True" ]; then
@@ -228,6 +241,10 @@ if [ "$OM_ACCOUNTING" = "True" ]; then
     cd $ODOO_PATH/custom-addons
     git clone https://github.com/odoomates/odooapps.git --depth 1 --single-branch --branch $ODOO_VERSION $ODOO_PATH/custom-addons/odoomates_accounting
 fi
+if [ "$CYBRO_ACCOUNTING" = "True" ]; then
+    cd $ODOO_PATH/custom-addons
+    git clone https://github.com/supportbntech/full_accounting_kit.git --depth 1 --single-branch --branch $ODOO_VERSION $ODOO_PATH/custom-addons/cybo_accounting_kit
+fi
 gum log -t timeonly -l info "📝 Setting up Log File..."
 touch $ODOO_PATH/$ODOO_USER.log
 touch $ODOO_PATH/$ODOO_USER.conf
@@ -251,6 +268,9 @@ fi
 if [ "$OM_ACCOUNTING" = "True" ]; then
     sudo -u "$ODOO_USER" bash -c "printf ',${ODOO_PATH}/custom-addons/odoomates_accounting' >> ${ODOO_PATH}/${ODOO_USER}.conf"
 fi
+if [ "$CYBRO_ACCOUNTING" = "True" ]; then
+    sudo -u "$ODOO_USER" bash -c "printf ',${ODOO_PATH}/custom-addons/cybo_accounting_kit' >> ${ODOO_PATH}/${ODOO_USER}.conf"
+fi
 gum log -t timeonly -l info "✅ Odoo Configuration File created at $ODOO_PATH/$ODOO_USER.conf"
 cat $ODOO_PATH/$ODOO_USER.conf
 
@@ -269,7 +289,7 @@ SyslogIdentifier=$ODOO_USER
 PermissionsStartOnly=true
 User=$ODOO_USER
 Group=$ODOO_USER
-ExecStart=$ODOO_PATH/odoo/odoo-bin -c $ODOO_PATH/$ODOO_USER.conf --logfile $ODOO_PATH/$ODOO_USER.log
+ExecStart=$ODOO_PATH/venv/bin/python $ODOO_PATH/odoo/odoo-bin -c $ODOO_PATH/$ODOO_USER.conf --logfile $ODOO_PATH/$ODOO_USER.log
 StandardOutput=journal+console
 
 [Install]
