@@ -1,15 +1,14 @@
 #!/bin/bash
 
 # Upgrade a specific Odoo module for a given instance
-INSTANCE_NAME=$(gum input --prompt="Enter Odoo instance name (e.g., odoo18.0): ")
-
-# Check if instance exists
-if ! systemctl list-units --type=service | grep -i "$INSTANCE_NAME" > /dev/null; then
-    gum log -t timeonly -l error "❌ Error: Instance $INSTANCE_NAME not found!"
+# Get Odoo instances from odoo-list.sh
+INSTANCES=$(./odoo-list.sh 2>/dev/null | grep -v "📦 Installed Odoo Instances:" | awk '{print $1}')
+if [ -z "$INSTANCES" ]; then
+    gum log -t timeonly -l warn "⚠️ No Odoo instances found!"
     exit 1
 fi
-
-# Extract Odoo version from instance name
+gum log -t timeonly -l info "📦 Installed Odoo Instances:"
+INSTANCE_NAME=$(echo "$INSTANCES" | gum choose)
 ODOO_VERSION=$(echo "$INSTANCE_NAME" | grep -oE '[0-9]+\.[0-9]+')
 if [ -z "$ODOO_VERSION" ]; then
     gum log -t timeonly -l error "❌ Error: Could not extract version from instance name!"
