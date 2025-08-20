@@ -34,11 +34,11 @@ if ! command -v zsh >/dev/null 2>&1; then
     # echo "path+=($REPO_LOC)" >> $ZENV
     echo "export TERM=xterm-256color" >> $ZENV
     # Set aliases
-    echo "alias install-odoo='$REPO_LOC/install_odoo.sh'" >> $ZENV
-    echo "alias server-info='$REPO_LOC/get_server_details.sh'" >> $ZENV
-    echo "alias update-odoo-scripts='cd $REPO_LOC && git pull'" >> $ZENV
+    echo "alias odoo-install='$REPO_LOC/odoo-install.sh'" >> $ZENV
+    echo "alias odoo-server-details='$REPO_LOC/odoo-server-details.sh'" >> $ZENV
+    echo "alias odoo-scripts-update='cd $REPO_LOC && git pull'" >> $ZENV
     echo "alias odoo-restart='$REPO_LOC/odoo-restart.sh'" >> $ZENV
-    echo "alias list-odoo='$REPO_LOC/list-odoo.sh'" >> $ZENV
+    echo "alias odoo-list='$REPO_LOC/odoo-list.sh'" >> $ZENV
     echo "alias odoo-upgrade='$REPO_LOC/odoo-upgrade.sh'" >> $ZENV
 
 fi

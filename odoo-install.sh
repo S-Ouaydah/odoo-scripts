@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Odoo Installer for Ubuntu Servers with the ability to handle multiple Odoo Intances
-# wget https://raw.githubusercontent.com/S-Ouaydah/odoo-scripts/refs/heads/fancy_gum/install_odoo.sh && chmod +x install_odoo.sh && ./install_odoo.sh
+# wget https://raw.githubusercontent.com/S-Ouaydah/odoo-scripts/refs/heads/fancy_gum/odoo-install.sh && chmod +x odoo-install.sh && ./odoo-install.sh
 set -e  # Exit immediately on error
 trap "gum log -t timeonly -l warn '⚠️ Exiting script...'; exit 1" SIGINT
 
