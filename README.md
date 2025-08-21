@@ -1,0 +1,32 @@
+# Odoo Scripts Repository
+
+A collection of useful scripts for managing Odoo environments.
+
+## Description
+
+This repository contains a variety of utility scripts for Odoo developers and administrators. The main focus is on simplifying common tasks and automating repetitive tasks.
+
+## Installation
+Simply Run the initialization script:
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/S-Ouaydah/odoo-scripts/refs/heads/expansion/server_init.sh)"
+```
+
+## Usage
+
+After installation, you'll have several commands available starting with `odoo-`. Here are some core functionalities:
+
+- `odoo-install`: Install Odoo Instance
+- `odoo-list`: List all installed Odoo instances
+- `odoo-upgrade`: Upgrade a specific Odoo module
+- `odoo-restart`: Restart a specific Odoo instance
+- `odoo-server-details`: Display server details for a specific Odoo instance
+
+## Ideas for Future Enhancements
+
+- Add backup functionality
+
+## Contribution Guidelines
+
+If you'd like to contribute to this project, feel free to fork this repository and submit pull requests for any improvements or new features you'd like to see.
