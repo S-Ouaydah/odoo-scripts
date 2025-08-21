@@ -97,7 +97,8 @@ echo "Odoo Version:$(gum style --foreground 5 --bold "$ODOO_VERSION")"
 
 ask_question "Master Password" "masteradmin" "MASTER_PASS"
 ask_question "Odoo Port" "80${ODOO_VERSION%%.*}" "ODOO_PORT"
-ask_question "Odoo User" "odoo${ODOO_VERSION%%.*}" "ODOO_USER"
+ODOO_USER="odoo${ODOO_VERSION%%.*}"
+# ask_question "Odoo User" "odoo${ODOO_VERSION%%.*}" "ODOO_USER"
 ask_question "Odoo Path" "/opt/$ODOO_USER" "ODOO_PATH"
 
 # Check if user already exists
@@ -319,37 +320,26 @@ INST_DETAILS="
 * Link: http://$(hostname -I | awk '{print $1}'):$ODOO_PORT
 * User (Linux & PostgreSQL): $ODOO_USER  
 * Service Location: /etc/systemd/system/$ODOO_USER.service
-* Odoo location: $ODOO_PATH
+* Odoo Location: $ODOO_PATH
 * Custom addons folder: $ODOO_PATH/custom-addons
 * Odoo Log File: $ODOO_PATH/$ODOO_USER.log
 * Odoo Configuration File: $ODOO_PATH/$ODOO_USER.conf
 * Superadmin Password: $MASTER_PASS
 
+  To Restart Odoo service
+### sudo systemctl restart $ODOO_USER.service
+
+  To Tail Odoo Log File
+### tail -f -n 50 $ODOO_PATH/$ODOO_USER.log
 =========================================================================
 "
 
 gum style --foreground 3 --border-foreground 4 --border double --align left --width 90 --margin "1 2" --padding "2 4" "$(gum format -- "$INST_DETAILS")"
 
-TIPS="
-=========================================================================
-########## Tips and Useful Commands ##########
-
-Restart Odoo service
-### sudo systemctl restart $ODOO_USER.service
-
-Don't Forget to Install OhMyZsh on Odoo user ;)
-### sh -c '\$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)'
-
-To Tail Odoo Log File
-### tail -f -n 50 $ODOO_PATH/$ODOO_USER.log
-========================================================================="
-
-gum style --foreground 4 --border-foreground 3 --border double --align left --width 100 --margin "1 2" --padding "2 4" "$(gum format -- "$TIPS")"
-
 # save the info
-touch /opt/server_info.txt
-touch /opt/server_tips.txt
-echo "$INST_DETAILS" >> /opt/server_info.txt
-echo "$TIPS" >> /opt/server_tips.txt
+touch /opt/$ODOO_USER/server_info.txt
+touch /opt/$ODOO_USER/loc.txt
+echo "$INST_DETAILS" >>  /opt/$ODOO_USER/server_info.txt
+echo "$ODOO_PATH" >>  /opt/$ODOO_USER/loc.txt
 
 gum log -t timeonly -l info "🎉 Installation Completed 🎉" --message.foreground 3
