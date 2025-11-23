@@ -11,6 +11,14 @@ else
     ODOO_BASE_DIR="/opt"
 fi
 
+# Help function
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: odoo-ssl"
+    echo "Interactively setup Nginx and SSL (Certbot) for an Odoo instance."
+    echo "Requires root privileges."
+    exit 0
+fi
+
 # Check for root
 if [ "$EUID" -ne 0 ]; then 
   gum log -t timeonly -l error "❌ Please run as root"

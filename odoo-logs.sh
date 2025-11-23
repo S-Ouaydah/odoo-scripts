@@ -11,6 +11,13 @@ else
     ODOO_BASE_DIR="/opt"
 fi
 
+# Help function
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: odoo-logs"
+    echo "Interactively select an Odoo instance and tail its log file."
+    exit 0
+fi
+
 # Get Odoo instances from odoo-list.sh
 INSTANCES_RAW=$($ODOO_SCRIPTS_DIR/odoo-list.sh 2>/dev/null | grep -v "📦 Installed Odoo Instances:")
 if [ -z "$INSTANCES_RAW" ]; then

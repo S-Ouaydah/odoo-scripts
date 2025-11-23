@@ -9,6 +9,13 @@ if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 fi
 
+# Help function
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: odoo-server-details"
+    echo "Display details (ports, passwords, paths) for a selected Odoo instance."
+    exit 0
+fi
+
 # Get Odoo instances from odoo-list.sh (format: ODOO_USER|ODOO_PATH)
 INSTANCES_RAW=$($ODOO_SCRIPTS_DIR/odoo-list.sh 2>/dev/null | grep -v "📦 Installed Odoo Instances:")
 if [ -z "$INSTANCES_RAW" ]; then

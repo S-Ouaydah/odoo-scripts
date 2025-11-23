@@ -10,6 +10,13 @@ if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 fi
 
+# Help function
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: odoo-upgrade"
+    echo "Interactively select an Odoo instance and a module to upgrade."
+    exit 0
+fi
+
 INSTANCES_RAW=$($ODOO_SCRIPTS_DIR/odoo-list.sh 2>&1 | grep -v "📦 Installed Odoo Instances:")
 if [ -z "$INSTANCES_RAW" ]; then
     gum log -t timeonly -l warn "⚠️ No Odoo instances found!"

@@ -10,6 +10,13 @@ if [ -f "$CONFIG_FILE" ]; then
     source "$CONFIG_FILE"
 fi
 
+# Help function
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: odoo-restart"
+    echo "Interactively select and restart an Odoo service."
+    exit 0
+fi
+
 INSTANCES_OUTPUT=$($ODOO_SCRIPTS_DIR/odoo-list.sh 2>&1)
 
 # Extract instance names (skip the first line which is the log message)

@@ -3,6 +3,13 @@
 # Configuration Editor for Odoo Scripts
 CONFIG_FILE="/etc/odoo-scripts.conf"
 
+# Help function
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: odoo-config"
+    echo "Opens the global configuration file ($CONFIG_FILE) in the default editor."
+    exit 0
+fi
+
 # Ensure config file exists
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "Creating default configuration at $CONFIG_FILE..."

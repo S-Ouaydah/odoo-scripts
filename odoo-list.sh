@@ -12,6 +12,13 @@ else
     ODOO_BASE_DIR="/opt"
 fi
 
+# Help function
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: odoo-list"
+    echo "Lists all installed Odoo instances found in $ODOO_BASE_DIR."
+    exit 0
+fi
+
 # Check for Odoo versions in ODOO_BASE_DIR
 for dir in "$ODOO_BASE_DIR"/*/; do
     if [ -d "$dir" ]; then
