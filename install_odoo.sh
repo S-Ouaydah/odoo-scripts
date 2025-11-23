@@ -156,7 +156,7 @@ echo -e "${GREY}Odoo Community Cloned...${RESET}"
 
 set +e
 if [ $IS_ENTERPRISE = "True" ]; then
-    GITHUB_RESPONSE=$(sudo -u ${ODOO_USER} git clone https://www.github.com/odoo/enterprise --depth 1 --branch $ODOO_VERSION --single-branch 2>&1)
+    GITHUB_RESPONSE=$(sudo -u ${ODOO_USER} git clone git@github.com:odoo/enterprise.git --depth 1 --branch $ODOO_VERSION --single-branch 2>&1)
     echo $GITHUB_RESPONSE
     if [[ $GITHUB_RESPONSE == *"Authentication"* ]]; then
         echo -e "${RED}Error: Your authentication with Github has failed!${RESET}"
