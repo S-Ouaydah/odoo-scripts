@@ -1,11 +1,19 @@
 #!/bin/bash
 
-# List all installed Odoo instances by checking /opt/ directories and their loc.txt files
+# List all installed Odoo instances by checking directories and their loc.txt files
 ODOO_VERSIONS=()
 ODOO_PATHS=()
+CONFIG_FILE="/etc/odoo-scripts.conf"
 
-# Check for Odoo versions in /opt/ directory
-for dir in /opt/*/; do
+# Load configuration
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+else
+    ODOO_BASE_DIR="/opt"
+fi
+
+# Check for Odoo versions in ODOO_BASE_DIR
+for dir in "$ODOO_BASE_DIR"/*/; do
     if [ -d "$dir" ]; then
         # Extract version name from directory path
         VERSION=$(basename "$dir")

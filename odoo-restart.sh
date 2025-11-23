@@ -2,7 +2,15 @@
 
 # Restart Odoo instance by name
 # Get list of instances using odoo-list.sh
-INSTANCES_OUTPUT=$(odoo-list.sh 2>&1)
+CONFIG_FILE="/etc/odoo-scripts.conf"
+ODOO_SCRIPTS_DIR="/opt/odoo-scripts"
+
+# Load configuration
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+fi
+
+INSTANCES_OUTPUT=$($ODOO_SCRIPTS_DIR/odoo-list.sh 2>&1)
 
 # Extract instance names (skip the first line which is the log message)
 INSTANCES=$(echo "$INSTANCES_OUTPUT" | sed '1d' | grep -v '^$')

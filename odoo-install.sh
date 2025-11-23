@@ -10,6 +10,14 @@ VERBOSE="False"
 COPY_SSH="False"
 OM_ACCOUNTING="False"
 CYBRO_ACCOUNTING="False"
+CONFIG_FILE="/etc/odoo-scripts.conf"
+
+# Load configuration
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+else
+    ODOO_BASE_DIR="/opt"
+fi
 
 usage() {
   echo "Usage: $0 --[verbose]"
@@ -92,14 +100,14 @@ fi
 
 echo "Is Enterprise:$(gum style --foreground 5 --bold "$IS_ENTERPRISE")"
 
-ODOO_VERSION=$(gum choose "18.0" "17.0" "16.0" "15.0" --header="Choose Odoo Version:")
+ODOO_VERSION=$(gum choose "19.0" "18.0" "17.0" "16.0" "15.0" --header="Choose Odoo Version:")
 echo "Odoo Version:$(gum style --foreground 5 --bold "$ODOO_VERSION")"
 
 ask_question "Master Password" "masteradmin" "MASTER_PASS"
 ask_question "Odoo Port" "80${ODOO_VERSION%%.*}" "ODOO_PORT"
 ODOO_USER="odoo${ODOO_VERSION%%.*}"
 # ask_question "Odoo User" "odoo${ODOO_VERSION%%.*}" "ODOO_USER"
-ask_question "Odoo Path" "/opt/$ODOO_USER" "ODOO_PATH"
+ask_question "Odoo Path" "$ODOO_BASE_DIR/$ODOO_USER" "ODOO_PATH"
 
 # Check if user already exists
 if id "$ODOO_USER" &>/dev/null; then

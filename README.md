@@ -17,11 +17,18 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/S-Ouaydah/odoo-scripts/ref
 
 After installation, you'll have several commands available starting with `odoo-`. Here are some core functionalities:
 
-- `odoo-install`: Install Odoo Instance
+- `odoo-install`: Install Odoo Instance (Supports 15.0 - 19.0)
 - `odoo-list`: List all installed Odoo instances
 - `odoo-upgrade`: Upgrade a specific Odoo module
 - `odoo-restart`: Restart a specific Odoo instance
 - `odoo-server-details`: Display server details for a specific Odoo instance
+- `odoo-logs`: View live logs for a specific Odoo instance
+- `odoo-ssl`: Setup SSL for a specific Odoo instance
+- `odoo-config`: Edit global configuration
+
+## Configuration
+
+The scripts use a global configuration file located at `/etc/odoo-scripts.conf`. You can edit this file using `odoo-config` to change settings like the default installation directory.
 
 ## Ideas for Future Enhancements
 

@@ -2,7 +2,15 @@
 
 # Upgrade a specific Odoo module for a given instance
 # Get Odoo instances from odoo-list.sh (format: ODOO_USER|ODOO_PATH)
-INSTANCES_RAW=$(./odoo-list.sh 2>/dev/null | grep -v "📦 Installed Odoo Instances:")
+CONFIG_FILE="/etc/odoo-scripts.conf"
+ODOO_SCRIPTS_DIR="/opt/odoo-scripts"
+
+# Load configuration
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+fi
+
+INSTANCES_RAW=$($ODOO_SCRIPTS_DIR/odoo-list.sh 2>&1 | grep -v "📦 Installed Odoo Instances:")
 if [ -z "$INSTANCES_RAW" ]; then
     gum log -t timeonly -l warn "⚠️ No Odoo instances found!"
     exit 1
